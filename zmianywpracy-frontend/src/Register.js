@@ -9,7 +9,7 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('https://your-backend-url/register', {
+      const response = await axios.post('https://zmianywpracy-production.up.railway.app/register', {
         username,
         password,
       });
