@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './App.css';
 import Register from './Register'; // Dodaj komponent rejestracji
 import Login from './Login'; // Dodaj komponent logowania
+import Schedule from './Schedule'; // Importuj komponent harmonogramu
 
 import logo from './logo.svg'; // Zostaw logo React
 
@@ -16,7 +17,8 @@ function App() {
         {token ? (
           <div>
             <h2>Welcome, you are logged in!</h2>
-            {/* Tutaj możesz dodać inne komponenty, takie jak harmonogram */}
+            {/* Wyświetl harmonogram po zalogowaniu */}
+            <Schedule token={token} />
           </div>
         ) : (
           <div>
