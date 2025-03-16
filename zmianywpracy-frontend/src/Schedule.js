@@ -2,47 +2,52 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const Schedule = ({ token }) => {
-  const [scheduleData, setScheduleData] = useState([]);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
+  const [schedule, setSchedule] = useState([]);
+  const [newSchedule, setNewSchedule] = useState({
+    username: '',
+    day: '',
+    startTime: '',
+    endTime: '',
+  });
   const [error, setError] = useState('');
 
-  // Fetch schedule on component mount
+  // Fetch the current week's schedule
   useEffect(() => {
-    if (token) {
-      const fetchSchedule = async () => {
-        try {
-          const response = await axios.get('https://zmianywpracy-production.up.railway.app/api/schedule', {
-            params: { userId: 1 },  // Zakładam, że masz ID użytkownika
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-          setScheduleData(response.data);
-        } catch (err) {
-          setError('Failed to fetch schedule');
-          console.error(err);
-        }
-      };
-
-      fetchSchedule();
-    }
+    const fetchSchedule = async () => {
+      try {
+        const response = await axios.get('https://zmianywpracy-production.up.railway.app/api/schedule', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setSchedule(response.data);
+      } catch (err) {
+        setError('Error fetching schedule');
+        console.error(err);
+      }
+    };
+    fetchSchedule();
   }, [token]);
 
-  // Handle new schedule submission
+  // Handle form input for new schedule
+  const handleChange = (e) => {
+    setNewSchedule({
+      ...newSchedule,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  // Handle submit new schedule
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(
+      await axios.post(
         'https://zmianywpracy-production.up.railway.app/api/schedule',
         {
-          userId: 1, // Zakładając, że masz userId
-          startDate,
-          endDate,
-          startTime,
-          endTime,
+          username: newSchedule.username,
+          day: newSchedule.day,
+          startTime: newSchedule.startTime,
+          endTime: newSchedule.endTime,
         },
         {
           headers: {
@@ -50,13 +55,16 @@ const Schedule = ({ token }) => {
           },
         }
       );
-      setScheduleData([...scheduleData, response.data]);
-      setStartDate('');
-      setEndDate('');
-      setStartTime('');
-      setEndTime('');
+      setNewSchedule({ username: '', day: '', startTime: '', endTime: '' });
+      // Re-fetch schedule after adding a new entry
+      const response = await axios.get('https://zmianywpracy-production.up.railway.app/api/schedule', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      setSchedule(response.data);
     } catch (err) {
-      setError('Failed to save schedule');
+      setError('Error adding new schedule');
       console.error(err);
     }
   };
@@ -67,48 +75,65 @@ const Schedule = ({ token }) => {
       {error && <p>{error}</p>}
       <form onSubmit={handleSubmit}>
         <div>
-          <label>Start Date</label>
+          <label>Username</label>
           <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            type="text"
+            name="username"
+            value={newSchedule.username}
+            onChange={handleChange}
           />
         </div>
         <div>
-          <label>End Date</label>
+          <label>Day</label>
           <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            type="text"
+            name="day"
+            value={newSchedule.day}
+            onChange={handleChange}
           />
         </div>
         <div>
           <label>Start Time</label>
           <input
             type="time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
+            name="startTime"
+            value={newSchedule.startTime}
+            onChange={handleChange}
           />
         </div>
         <div>
           <label>End Time</label>
           <input
             type="time"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
+            name="endTime"
+            value={newSchedule.endTime}
+            onChange={handleChange}
           />
         </div>
-        <button type="submit">Save Schedule</button>
+        <button type="submit">Add Schedule</button>
       </form>
-
-      <h3>Your Schedule</h3>
-      <ul>
-        {scheduleData.map((schedule, index) => (
-          <li key={index}>
-            {schedule.startDate} to {schedule.endDate}, {schedule.startTime} - {schedule.endTime}
-          </li>
-        ))}
-      </ul>
+      
+      <h3>Current Week's Schedule</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Username</th>
+            <th>Day</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+          </tr>
+        </thead>
+        <tbody>
+          {schedule.map((entry, index) => (
+            <tr key={index}>
+              <td>{entry.username}</td>
+              <td>{entry.day}</td>
+              <td>{entry.start_time}</td>
+              <td>{entry.end_time}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 };
