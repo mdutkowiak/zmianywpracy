@@ -1,51 +1,52 @@
 const express = require('express');
-const db = require('../db');
-const authMiddleware = require('../middleware/authMiddleware');
-
+const { Pool } = require('pg');
 const router = express.Router();
 
-// Dodanie wpisu do harmonogramu
-router.post('/schedule', authMiddleware, async (req, res) => {
-    const { user_id, date, start_time, end_time } = req.body;
-
-    try {
-        const result = await db.query(
-            `INSERT INTO schedule (user_id, date, start_time, end_time) 
-             VALUES ($1, $2, $3, $4) RETURNING *`,
-            [user_id, date, start_time, end_time]
-        );
-        res.status(201).json(result.rows[0]);
-    } catch (error) {
-        res.status(500).json({ error: 'Błąd podczas zapisu harmonogramu' });
-    }
+// PostgreSQL Connection
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
 });
 
-// Pobranie harmonogramu dla danego tygodnia
-router.get('/schedule', authMiddleware, async (req, res) => {
-    const { start_date, end_date } = req.query;
+// Endpoint do pobrania harmonogramu dla użytkownika
+router.get('/schedule', async (req, res) => {
+  const { userId } = req.query;  // Zakładamy, że userId jest przekazywane w zapytaniu
 
-    try {
-        const result = await db.query(
-            `SELECT u.username, u.full_name, s.date, s.start_time, s.end_time
-             FROM schedule s
-             JOIN users u ON s.user_id = u.id
-             WHERE s.date BETWEEN $1 AND $2
-             ORDER BY u.full_name ASC, s.date ASC, s.start_time ASC`,
-            [start_date, end_date]
-        );
+  try {
+    const result = await pool.query('SELECT * FROM schedules WHERE user_id = $1', [userId]);
+    res.status(200).json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
-        const scheduleByUser = {};
-        result.rows.forEach(entry => {
-            if (!scheduleByUser[entry.full_name]) {
-                scheduleByUser[entry.full_name] = {};
-            }
-            scheduleByUser[entry.full_name][entry.date] = `${entry.start_time} - ${entry.end_time}`;
-        });
+// Endpoint do zapisania harmonogramu dla użytkownika
+router.post('/schedule', async (req, res) => {
+  const { userId, startDate, endDate, startTime, endTime } = req.body;
 
-        res.status(200).json(scheduleByUser);
-    } catch (error) {
-        res.status(500).json({ error: 'Błąd podczas pobierania harmonogramu' });
-    }
+  try {
+    const result = await pool.query(
+      'INSERT INTO schedules (user_id, start_date, end_date, start_time, end_time) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [userId, startDate, endDate, startTime, endTime]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Endpoint do usunięcia harmonogramu dla użytkownika
+router.delete('/schedule', async (req, res) => {
+  const { scheduleId } = req.body;
+
+  try {
+    await pool.query('DELETE FROM schedules WHERE id = $1', [scheduleId]);
+    res.status(204).send();  // Usunięto rekord, brak odpowiedzi
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
 module.exports = router;

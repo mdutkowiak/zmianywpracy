@@ -9,10 +9,10 @@ const Login = ({ setToken }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('https://zmianywpracy-production.up.railway.app/login', {
+      const response = await axios.post('https://zmianywpracy-production.up.railway.app/api/auth/login', {
         username,
         password,
-      });
+        });
       console.log('Logged in:', response.data);
       setToken(response.data.token);  // Przechowaj token w stanie
       setUsername('');

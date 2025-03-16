@@ -9,10 +9,10 @@ const Register = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('https://zmianywpracy-production.up.railway.app/register', {
+      const response = await axios.post('https://zmianywpracy-production.up.railway.app/api/auth/register', {
         username,
         password,
-      });
+        });
       console.log('User registered:', response.data);
       setUsername('');
       setPassword('');

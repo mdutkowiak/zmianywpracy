@@ -17,8 +17,8 @@ app.use(cors());
 app.use(express.json());
 
 // 🔹 Podpięcie tras (autoryzacja + harmonogram)
-app.use('/', authRoutes);
-app.use('/api', scheduleRoutes);  
+app.use('/api/auth', authRoutes);  // Endpoints for authentication
+app.use('/api/schedule', scheduleRoutes);  // Endpoints for schedule
 
 // Start serwera
 app.listen(port, () => {
